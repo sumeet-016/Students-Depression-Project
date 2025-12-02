@@ -1,23 +1,48 @@
+import traceback
+import sys
+import joblib
 import streamlit as st
 import numpy as np
 import pandas as pd
-import joblib
 from PIL import Image
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
+
 # ----------------------------
 # Configure Streamlit App
 # ----------------------------
 st.set_page_config(page_title="Student Depression Predictor", page_icon="🧠", layout="wide")
 
-# Load trained model
-@st.cache_resource
-def load_model():
-    return joblib.load("ada_boost_tuned_model.joblib")  # Load your trained model
+# ----------------------------
+# Robust model loader (prints full traceback to logs)
+# ----------------------------
+def try_load_model(path="ada_boost_tuned_model.joblib"):
+    """Attempt to load a joblib model and print full traceback on failure."""
+    try:
+        model = joblib.load(path)
+        print("MODEL LOADED OK")
+        print("model type:", type(model))
+        if hasattr(model, "feature_names_in_"):
+            print("model.feature_names_in_ (preview up to 50):", list(getattr(model, "feature_names_in_")[:50]))
+        return model
+    except Exception:
+        tb = traceback.format_exc()
+        print("=== MODEL LOAD FAILED ===")
+        print(tb)
 
-model = load_model()
+@st.cache_resource
+def load_model_cached(path="ada_boost_tuned_model.joblib"):
+    return try_load_model(path)
+
+# Load model
+model = None
+try:
+    model = load_model_cached()
+except Exception as e:
+    st.error("Model load failed. Check the server logs (Manage app → Logs) for the full traceback.")
+    st.stop()
 
 # ----------------------------
 # Sidebar
@@ -46,8 +71,8 @@ col1, col2 = st.columns(2)
 with col1:
     gender = st.radio("Gender", ["Male", "Female"])
     age = st.number_input("Age", min_value=1, max_value=120, step=1)
-    city = st.text_input("City")
-    profession = st.text_input("Profession")
+    city = st.text_input("City", value="")
+    profession = st.text_input("Profession", value="")
     academic_pressure = st.slider("Academic Pressure (1-5)", 1.0, 5.0, 3.0)
     study_satisfaction = st.slider("Study Satisfaction (1-5)", 1.0, 5.0, 3.0)
     sleep_duration = st.selectbox("Sleep Duration", ["Less than 5 hours", "5-6 hours", "7-8 hours", "More than 8 hours"])
@@ -59,10 +84,10 @@ with col2:
     family_history = st.radio("Family history of mental illness?", ["Yes", "No"])
     study_pressure_hours = st.number_input("Work/Study Hours per week", min_value=0, max_value=40, step=1)
     cgpa = st.number_input("CGPA", min_value=0.0, max_value=10.0, step=0.01)
-    degree = st.text_input("Degree")
+    degree = st.text_input("Degree", value="")
 
 # ----------------------------
-# Mapping categorical to numeric
+# Mapping categorical to numeric (as you had before)
 # ----------------------------
 gender = 1 if gender == 'Male' else 0
 dietary_habits = 1 if dietary_habits == 'Healthy' else 0
@@ -87,8 +112,8 @@ columns = ['Gender', 'Age', 'City', 'Profession', 'Academic Pressure',
            'Financial Stress', 'Family History of Mental Illness']
 
 input_df = pd.DataFrame([[gender, age, city, profession, academic_pressure,
-                            cgpa, study_satisfaction, sleep_duration,
-                            dietary_habits, degree, suicidal_thoughts,
+                          cgpa, study_satisfaction, sleep_duration,
+                          dietary_habits, degree, suicidal_thoughts,
                           study_pressure_hours, financial_stress, family_history]],
                         columns=columns)
 
@@ -112,19 +137,41 @@ button_style = """
 </style>
 """
 
-# background image
-image = Image.open('Mental Health.jpg')
-st.image(image, width=900)
+# background image (safe width)
+try:
+    image = Image.open('Mental Health.jpg')
+    st.image(image, width=900)
+except FileNotFoundError:
+    # If image isn't available in deployed environment, don't crash the app
+    print("Background image not found: 'Mental Health.jpg'")
 
 st.markdown(button_style, unsafe_allow_html=True)
 
-
 # ----------------------------
-# Prediction Logic
+# Prediction Logic (with input validation)
 # ----------------------------
 if st.button("Predict"):
     with st.spinner("Predicting..."):
         try:
+            # Validate & reorder columns based on model.feature_names_in_ if available
+            if hasattr(model, "feature_names_in_"):
+                expected = list(model.feature_names_in_)
+                missing = [c for c in expected if c not in input_df.columns]
+                if missing:
+                    msg = f"Input is missing expected columns required by the model: {missing}"
+                    st.error(msg)
+                    raise ValueError(msg)
+                # Reorder dataframe to match model expectation
+                input_df = input_df[expected]
+            else:
+                # If no feature names available, check number of features
+                if hasattr(model, "n_features_in_"):
+                    if input_df.shape[1] != model.n_features_in_:
+                        msg = f"Input feature count ({input_df.shape[1]}) does not match model's expected feature count ({model.n_features_in_})."
+                        st.error(msg)
+                        raise ValueError(msg)
+
+            # Now predict
             prediction_proba = model.predict_proba(input_df)
             depression_prob = prediction_proba[0][1]  # probability of depression
 
@@ -143,4 +190,8 @@ if st.button("Predict"):
             st.write(f"Depression Probability: {depression_prob*100:.2f}%")
 
         except Exception as e:
-            st.error(f"Error during prediction: {e}")
+            # Print full traceback in logs and show a concise error in the UI
+            tb = traceback.format_exc()
+            print("=== PREDICTION ERROR ===")
+            print(tb)
+            st.error(f"Error during prediction: {e}. Check logs for full traceback.")
