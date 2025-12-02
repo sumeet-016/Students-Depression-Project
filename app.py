@@ -3,7 +3,10 @@ import numpy as np
 import pandas as pd
 import joblib
 from PIL import Image
-
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
 # ----------------------------
 # Configure Streamlit App
 # ----------------------------
