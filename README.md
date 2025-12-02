@@ -1,63 +1,72 @@
-# Student Depression Prediction Using Machine Learning
+# Student Depression Predictor 🧠
 
-## Overview
+**Machine Learning–based Early-Warning System for Student Mental Health**
 
-This repository implements a machine‑learning pipeline to identify students at risk of depression using academic, behavioral, demographic, and lifestyle features. The goal is to provide an early‑warning analytic (not a clinical diagnosis) that institutions or counselors can use to prioritize outreach and support.
-
----
-
-## Quick project summary
-
-* **Dataset**: `Student Depression Dataset.csv` (also an updated version `StudentDepression_update_dataset.csv`).
-* **Records**: 27,901 rows, 18 columns.
-* **Target column**: `Depression` (binary: `1` = depressed, `0` = not depressed).
-* **Saved model**: `ada_boost_tuned_model.joblib` (pipeline containing preprocessing + AdaBoost classifier).
-* **Main notebooks**: `EDA.ipynb`, `Model Training.ipynb`.
+This project builds a complete machine-learning pipeline and an interactive Streamlit application to identify students who may be at risk of depression.
+It is designed strictly for **research, awareness, and support outreach**, not for medical diagnosis.
 
 ---
 
-## Dataset (columns)
+## 📁 Project Structure
 
-The dataset contains the following columns:
-
-* id
-* Gender
-* Age
-* City
-* Profession
-* Academic Pressure
-* Work Pressure
-* CGPA
-* Study Satisfaction
-* Job Satisfaction
-* Sleep Duration
-* Dietary Habits
-* Degree
-* Have you ever had suicidal thoughts ?
-* Work/Study Hours
-* Financial Stress
-* Family History of Mental Illness
-* Depression (target)
-
-**Target distribution (original dataset)**: `Depression` = 1: **16,336** rows, 0: **11,565** rows — slightly imbalanced toward the positive class.
+| File / Folder                          | Description                                                        |
+| -------------------------------------- | ------------------------------------------------------------------ |
+| `Student Depression Dataset.csv`       | Main dataset used for training (27k+ rows).                        |
+| `StudentDepression_update_dataset.csv` | Updated version (if used).                                         |
+| `EDA.ipynb`                            | Exploratory analysis (visuals, distributions, correlations).       |
+| `Model Training.ipynb`                 | Full ML pipeline, preprocessing, tuning, evaluation, model export. |
+| `ada_boost_tuned_model.joblib`         | Saved ML pipeline (preprocessing + AdaBoost model).                |
+| `app.py`                               | Streamlit web app for interactive single-entry prediction.         |
+| `Mental Health.jpg`                    | Banner image for the web UI.                                       |
+| `requirements.txt`                     | Needed Python dependencies.                                        |
 
 ---
 
-## Preprocessing and EDA
+## 🔍 Project Summary
 
-* Performed standard exploratory analysis (distribution plots, correlation heatmaps, class balance checks) in `EDA.ipynb`.
-* Preprocessing pipeline (used in `Model Training.ipynb`) handles:
+* **Dataset size:** ~27,901 records
+* **Columns:** 18 input features + 1 target (`Depression`)
+* **Target:**
 
-  * Encoding categorical variables (one‑hot / ordinal as appropriate)
-  * Scaling numerical features
-  * Missing value handling (if any)
-  * ColumnTransformer + Pipeline to bundle preprocessing with the estimator
+  * `1` → Depressed
+  * `0` → Not depressed
+* **Goal:** Early identification based on lifestyle, academic pressure, satisfaction, stress levels, and personal history.
 
 ---
 
-## Models evaluated
+## 📊 Dataset Features
 
-The notebooks train and evaluate multiple baseline and tuned models (examples):
+Key features include:
+
+* Demographics: Gender, Age, City, Degree
+* Academic: CGPA, Academic Pressure, Study Satisfaction
+* Work factors: Work Pressure, Work/Study Hours, Job Satisfaction
+* Lifestyle: Sleep Duration, Dietary Habits
+* Personal History: Suicidal thoughts, Family history of mental illness
+* Target: **Depression**
+
+Class distribution (slightly imbalanced):
+
+* Depressed (`1`): **16,336**
+* Not depressed (`0`): **11,565**
+
+---
+
+## 🧪 EDA Overview
+
+`EDA.ipynb` includes:
+
+* Distribution plots for numeric variables
+* Countplots for categorical variables
+* Correlation heatmaps
+* Class imbalance analysis
+* Outlier and missing value checks
+
+---
+
+## 🤖 Model Training
+
+### Algorithms evaluated
 
 * Decision Tree
 * Random Forest
@@ -65,54 +74,116 @@ The notebooks train and evaluate multiple baseline and tuned models (examples):
 * XGBoost
 * AdaBoost
 
-### Tuned models (found in `Model Training.ipynb`)
+### Best Model
 
-**Gradient Boosting (tuned)**
+The best tuned model was **AdaBoost**, exported as:
 
-* `subsample=0.8`
-* `n_estimators=250`
-* `min_samples_split=20`
-* `min_samples_leaf=8`
-* `max_features='sqrt'`
-* `max_depth=2`
-* `learning_rate=0.1`
+```
+ada_boost_tuned_model.joblib
+```
 
-**AdaBoost (tuned and saved)**
+### Tuned Hyperparameters
 
-* `n_estimators=300`
-* `learning_rate=1.0`
-* `algorithm='SAMME.R'`
-* `random_state=42`
+```python
+n_estimators = 300
+learning_rate = 1.0
+algorithm = 'SAMME.R'
+random_state = 42
+```
 
-The AdaBoost pipeline was exported as `ada_boost_tuned_model.joblib`.
+A preprocessing pipeline (ColumnTransformer + OneHotEncoder + Scaler) is embedded inside the saved model.
 
 ---
 
-## How to run (recommended)
+## ⚙️ Setup Instructions
 
-1. Create a Python environment and install dependencies. A `requirements.txt` is recommended (if not present, create one with the packages below):
+### 1️⃣ Create virtual environment
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
-# If requirements.txt is missing, at minimum install:
-# pip install pandas numpy scikit-learn matplotlib seaborn joblib
 ```
 
-2. Open and run the notebooks in order:
+Activate:
 
-* `EDA.ipynb` — exploratory analysis and visualizations
-* `Model Training.ipynb` — preprocessing, model training, evaluation, and model export
+* **Windows**
 
-3. Make predictions with the saved pipeline (example):
+  ```bash
+  venv\Scripts\activate
+  ```
+* **Mac/Linux**
+
+  ```bash
+  source venv/bin/activate
+  ```
+
+---
+
+### 2️⃣ Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+If you face version issues, pin:
+
+```
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+xgboost
+joblib
+streamlit
+pillow
+```
+
+---
+
+### 3️⃣ Run Jupyter notebooks
+
+```bash
+jupyter notebook
+```
+
+Execute:
+
+1. `EDA.ipynb`
+2. `Model Training.ipynb`
+
+---
+
+### 4️⃣ Run Streamlit App
+
+```bash
+streamlit run app.py
+```
+
+Your browser will open the interface.
+
+---
+
+## 🖼️ Streamlit App Features
+
+The app (`app.py`):
+
+* Loads the saved model safely with exception handling
+* Displays the mental-health banner image
+* Provides dropdowns/sliders for all input features
+* Generates prediction + probability
+* Alerts user if model file is missing
+* Handles incorrect input dimensions gracefully
+
+---
+
+## 🧠 Predict Using Python Script
 
 ```python
 import joblib
 import pandas as pd
 
 model = joblib.load('ada_boost_tuned_model.joblib')
-# Prepare a single-row DataFrame with the same feature columns (drop `id` and `Depression`)
+
 sample = pd.DataFrame([{
     'Gender':'Female',
     'Age':21,
@@ -133,46 +204,61 @@ sample = pd.DataFrame([{
 }])
 
 pred = model.predict(sample)
-print('Predicted depression label:', pred[0])
+proba = model.predict_proba(sample)[:, 1]
+
+print("Prediction:", pred[0])
+print("Depression Probability:", proba[0])
 ```
 
-**Note on sklearn/joblib compatibility:** If `joblib.load` raises an error about missing attributes or unconventional objects (for example when a saved pipeline uses a different scikit‑learn version than your runtime), run the following inside the same environment where the model was trained (or install a compatible `scikit-learn` version):
+---
+
+## 🛠️ Troubleshooting
+
+### ❗Model not loading?
+
+Your app will show a clean error, but check console logs for details.
+
+Common cause → **scikit-learn version mismatch**
+
+Check version:
 
 ```bash
 python -c "import sklearn; print(sklearn.__version__)"
-# then install the matching version, for example:
-# pip install scikit-learn==1.2.2
+```
+
+Install matching version (example):
+
+```bash
+pip install scikit-learn==1.2.2
 ```
 
 ---
 
-## Reproducibility & evaluation
+## 🧭 Ethical Considerations
 
-* Metrics printed in `Model Training.ipynb` include accuracy, precision, recall, F1 and the confusion matrix for each trained model. Use the notebooks to reproduce metric tables and plots.
-* Random seeds (`random_state=42`) were used in tuned classifiers for reproducibility.
-
----
-
-## Ethical considerations
-
-* This tool **is not a clinical diagnostic** — it is intended for prioritizing outreach and research.
-* It must not be used for punitive action (discipline, academic penalties) without human verification.
-* Consider privacy, consent, and data protection before deployment.
+* **This is NOT a diagnostic tool.**
+* Use results to **identify students who may need support or outreach**.
+* Do NOT use for academic penalties or judgement.
+* Ensure **data privacy, consent, confidentiality**.
+* Evaluate for **bias or fairness issues** before real deployment.
 
 ---
 
-## Next steps / improvements
+## 🚀 Future Improvements
 
-* Add a `requirements.txt` or `environment.yml` to lock dependencies.
-* Create a small Flask/Streamlit app for inference and accessible dashboards.
-* Add SHAP or LIME interpretability reports to explain predictions.
-* Add automated unit tests and CI for model reproducibility.
-* Run a bias and fairness audit (group-wise metrics, demographic parity checks).
+* Add SHAP/LIME explainability
+* Add a Flask/Streamlit dashboard for batch predictions
+* Add Docker container for consistent deployment
+* Add unit tests + CI automation
+* Include advanced fairness metrics (group-wise F1, DP, EO)
 
 ---
 
-## Contact
+## 👤 Author
 
-If you want this README written back to `README.md` in the repo or want the short `README.md` cleaned up directly, tell me and I will update the file.
+**Sumeet Kumar Pal**
 
-*I reviewed your current README as a baseline.* fileciteturn3file0
+* GitHub: **sumeet-016**
+* LinkedIn: [https://www.linkedin.com/in/palsumeet/](https://www.linkedin.com/in/palsumeet/)
+
+---
